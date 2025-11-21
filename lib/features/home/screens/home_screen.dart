@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:go_router/go_router.dart';
-import '../../../core/providers/recipe_provider.dart';
-import '../../../core/providers/auth_provider.dart';
-import '../widgets/featured_recipes_section.dart';
-import '../widgets/popular_recipes_section.dart';
-import '../widgets/recent_recipes_section.dart';
-import '../widgets/categories_section.dart';
+import '../../../core/providers/providers.dart';
+import '../../../shared/widgets/recipe_card.dart';
 import '../widgets/home_header.dart';
+import '../widgets/category_grid.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,109 +18,153 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadData();
+      context.read<RecipeProvider>().loadInitialData();
     });
-  }
-
-  Future<void> _loadData() async {
-    final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
-    await recipeProvider.loadInitialData();
-  }
-
-  Future<void> _onRefresh() async {
-    final recipeProvider = Provider.of<RecipeProvider>(context, listen: false);
-    await recipeProvider.refreshData();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Consumer<RecipeProvider>(
-        builder: (context, recipeProvider, child) {
-          if (recipeProvider.isLoading && 
-              recipeProvider.featuredRecipes.isEmpty) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
+      backgroundColor: Theme.of(context).scaffoldBackgroundColor,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          context.push('/create-recipe');
+        },
+        tooltip: 'Tạo công thức mới',
+        child: const Icon(Icons.add),
+      ),
+      body: SafeArea(
+        child: Consumer<RecipeProvider>(
+          builder: (context, recipeProvider, child) {
+            if (recipeProvider.isLoading) {
+              return const Center(child: CircularProgressIndicator());
+            }
 
-          if (recipeProvider.errorMessage != null && 
-              recipeProvider.featuredRecipes.isEmpty) {
-            return Center(
+            if (recipeProvider.errorMessage != null) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.error_outline,
+                      size: 64,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      recipeProvider.errorMessage!,
+                      style: Theme.of(context).textTheme.bodyLarge,
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        recipeProvider.loadInitialData();
+                      },
+                      child: const Text('Thử lại'),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return SingleChildScrollView(
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Icon(
-                    Icons.error_outline,
-                    size: 64,
-                    color: Theme.of(context).colorScheme.error,
+                  // Header
+                  const HomeHeader(),
+                  
+                  // Categories
+                  const CategoryGrid(),
+                  
+                  // Featured Recipes
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Công thức nổi bật',
+                          style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        SizedBox(
+                          height: 280,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: recipeProvider.featuredRecipes.length,
+                            itemBuilder: (context, index) {
+                              final recipe = recipeProvider.featuredRecipes[index];
+                              return Container(
+                                width: 200,
+                                margin: const EdgeInsets.only(right: 16),
+                                child: RecipeCard(
+                                  recipe: recipe,
+                                  onTap: () {
+                                    context.push('/recipe/${recipe.id}');
+                                  },
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 16),
-                  Text(
-                    recipeProvider.errorMessage!,
-                    style: Theme.of(context).textTheme.bodyLarge,
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: _loadData,
-                    child: const Text('Thử lại'),
+                  
+                  // Recent Recipes
+                  Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              'Công thức mới nhất',
+                              style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                context.go('/search');
+                              },
+                              child: const Text('Xem tất cả'),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        ListView.builder(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: recipeProvider.recentRecipes.length,
+                          itemBuilder: (context, index) {
+                            final recipe = recipeProvider.recentRecipes[index];
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 16),
+                              child: RecipeCard(
+                                recipe: recipe,
+                                isHorizontal: true,
+                                onTap: () {
+                                  context.push('/recipe/${recipe.id}');
+                                },
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             );
-          }
-
-          return RefreshIndicator(
-            onRefresh: _onRefresh,
-            child: CustomScrollView(
-              slivers: [
-                // App Bar
-                const SliverToBoxAdapter(
-                  child: HomeHeader(),
-                ),
-                
-                // Categories
-                const SliverToBoxAdapter(
-                  child: CategoriesSection(),
-                ),
-                
-                // Featured Recipes
-                const SliverToBoxAdapter(
-                  child: FeaturedRecipesSection(),
-                ),
-                
-                // Popular Recipes
-                const SliverToBoxAdapter(
-                  child: PopularRecipesSection(),
-                ),
-                
-                // Recent Recipes
-                const SliverToBoxAdapter(
-                  child: RecentRecipesSection(),
-                ),
-                
-                // Bottom padding for navigation bar
-                const SliverPadding(
-                  padding: EdgeInsets.only(bottom: 100),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-      floatingActionButton: Consumer<AuthProvider>(
-        builder: (context, authProvider, child) {
-          if (!authProvider.isAuthenticated) {
-            return const SizedBox.shrink();
-          }
-          
-          return FloatingActionButton(
-            onPressed: () => context.push('/create-recipe'),
-            tooltip: 'Tạo công thức mới',
-            child: const Icon(Icons.add),
-          );
-        },
+          },
+        ),
       ),
     );
   }

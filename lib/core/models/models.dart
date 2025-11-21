@@ -1,22 +1,20 @@
+// Recipe model
 class Recipe {
   final String id;
   final String name;
   final String description;
   final String imageUrl;
-  final String? videoUrl;
-  final List<Ingredient> ingredients;
+  final List<String> ingredients;
   final List<String> instructions;
   final int cookingTime; // in minutes
   final int servings;
-  final String difficulty; // easy, medium, hard
+  final String difficulty; // Easy, Medium, Hard
   final String category;
   final String authorId;
   final String authorName;
   final DateTime createdAt;
-  final DateTime updatedAt;
   final double rating;
-  final int ratingCount;
-  final List<String> tags;
+  final int reviewCount;
   final bool isFavorite;
 
   Recipe({
@@ -24,7 +22,6 @@ class Recipe {
     required this.name,
     required this.description,
     required this.imageUrl,
-    this.videoUrl,
     required this.ingredients,
     required this.instructions,
     required this.cookingTime,
@@ -34,10 +31,8 @@ class Recipe {
     required this.authorId,
     required this.authorName,
     required this.createdAt,
-    required this.updatedAt,
-    required this.rating,
-    required this.ratingCount,
-    required this.tags,
+    this.rating = 0.0,
+    this.reviewCount = 0,
     this.isFavorite = false,
   });
 
@@ -47,22 +42,17 @@ class Recipe {
       name: json['name'] ?? '',
       description: json['description'] ?? '',
       imageUrl: json['imageUrl'] ?? '',
-      videoUrl: json['videoUrl'],
-      ingredients: (json['ingredients'] as List?)
-          ?.map((i) => Ingredient.fromJson(i))
-          .toList() ?? [],
+      ingredients: List<String>.from(json['ingredients'] ?? []),
       instructions: List<String>.from(json['instructions'] ?? []),
       cookingTime: json['cookingTime'] ?? 0,
       servings: json['servings'] ?? 1,
-      difficulty: json['difficulty'] ?? 'easy',
+      difficulty: json['difficulty'] ?? 'Easy',
       category: json['category'] ?? '',
       authorId: json['authorId'] ?? '',
       authorName: json['authorName'] ?? '',
       createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
-      updatedAt: DateTime.parse(json['updatedAt'] ?? DateTime.now().toIso8601String()),
       rating: (json['rating'] ?? 0.0).toDouble(),
-      ratingCount: json['ratingCount'] ?? 0,
-      tags: List<String>.from(json['tags'] ?? []),
+      reviewCount: json['reviewCount'] ?? 0,
       isFavorite: json['isFavorite'] ?? false,
     );
   }
@@ -73,8 +63,7 @@ class Recipe {
       'name': name,
       'description': description,
       'imageUrl': imageUrl,
-      'videoUrl': videoUrl,
-      'ingredients': ingredients.map((i) => i.toJson()).toList(),
+      'ingredients': ingredients,
       'instructions': instructions,
       'cookingTime': cookingTime,
       'servings': servings,
@@ -83,10 +72,8 @@ class Recipe {
       'authorId': authorId,
       'authorName': authorName,
       'createdAt': createdAt.toIso8601String(),
-      'updatedAt': updatedAt.toIso8601String(),
       'rating': rating,
-      'ratingCount': ratingCount,
-      'tags': tags,
+      'reviewCount': reviewCount,
       'isFavorite': isFavorite,
     };
   }
@@ -96,8 +83,7 @@ class Recipe {
     String? name,
     String? description,
     String? imageUrl,
-    String? videoUrl,
-    List<Ingredient>? ingredients,
+    List<String>? ingredients,
     List<String>? instructions,
     int? cookingTime,
     int? servings,
@@ -106,10 +92,8 @@ class Recipe {
     String? authorId,
     String? authorName,
     DateTime? createdAt,
-    DateTime? updatedAt,
     double? rating,
-    int? ratingCount,
-    List<String>? tags,
+    int? reviewCount,
     bool? isFavorite,
   }) {
     return Recipe(
@@ -117,7 +101,6 @@ class Recipe {
       name: name ?? this.name,
       description: description ?? this.description,
       imageUrl: imageUrl ?? this.imageUrl,
-      videoUrl: videoUrl ?? this.videoUrl,
       ingredients: ingredients ?? this.ingredients,
       instructions: instructions ?? this.instructions,
       cookingTime: cookingTime ?? this.cookingTime,
@@ -127,76 +110,96 @@ class Recipe {
       authorId: authorId ?? this.authorId,
       authorName: authorName ?? this.authorName,
       createdAt: createdAt ?? this.createdAt,
-      updatedAt: updatedAt ?? this.updatedAt,
       rating: rating ?? this.rating,
-      ratingCount: ratingCount ?? this.ratingCount,
-      tags: tags ?? this.tags,
+      reviewCount: reviewCount ?? this.reviewCount,
       isFavorite: isFavorite ?? this.isFavorite,
     );
   }
 }
 
-class Ingredient {
+// User model
+class AppUser {
+  final String id;
+  final String email;
   final String name;
-  final double amount;
-  final String unit;
-  final String? description;
+  final String? profileImageUrl;
+  final List<String> favoriteRecipeIds;
+  final List<String> createdRecipeIds;
+  final DateTime createdAt;
 
-  Ingredient({
+  AppUser({
+    required this.id,
+    required this.email,
     required this.name,
-    required this.amount,
-    required this.unit,
-    this.description,
+    this.profileImageUrl,
+    this.favoriteRecipeIds = const [],
+    this.createdRecipeIds = const [],
+    required this.createdAt,
   });
 
-  factory Ingredient.fromJson(Map<String, dynamic> json) {
-    return Ingredient(
+  factory AppUser.fromJson(Map<String, dynamic> json) {
+    return AppUser(
+      id: json['id'] ?? '',
+      email: json['email'] ?? '',
       name: json['name'] ?? '',
-      amount: (json['amount'] ?? 0.0).toDouble(),
-      unit: json['unit'] ?? '',
-      description: json['description'],
+      profileImageUrl: json['profileImageUrl'],
+      favoriteRecipeIds: List<String>.from(json['favoriteRecipeIds'] ?? []),
+      createdRecipeIds: List<String>.from(json['createdRecipeIds'] ?? []),
+      createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
+      'id': id,
+      'email': email,
       'name': name,
-      'amount': amount,
-      'unit': unit,
-      'description': description,
+      'profileImageUrl': profileImageUrl,
+      'favoriteRecipeIds': favoriteRecipeIds,
+      'createdRecipeIds': createdRecipeIds,
+      'createdAt': createdAt.toIso8601String(),
     };
   }
 
-  @override
-  String toString() {
-    String result = '$amount $unit $name';
-    if (description != null && description!.isNotEmpty) {
-      result += ' ($description)';
-    }
-    return result;
+  AppUser copyWith({
+    String? id,
+    String? email,
+    String? name,
+    String? profileImageUrl,
+    List<String>? favoriteRecipeIds,
+    List<String>? createdRecipeIds,
+    DateTime? createdAt,
+  }) {
+    return AppUser(
+      id: id ?? this.id,
+      email: email ?? this.email,
+      name: name ?? this.name,
+      profileImageUrl: profileImageUrl ?? this.profileImageUrl,
+      favoriteRecipeIds: favoriteRecipeIds ?? this.favoriteRecipeIds,
+      createdRecipeIds: createdRecipeIds ?? this.createdRecipeIds,
+      createdAt: createdAt ?? this.createdAt,
+    );
   }
 }
 
+// Recipe category model
 class RecipeCategory {
   final String id;
   final String name;
-  final String description;
   final String iconUrl;
   final int recipeCount;
 
   RecipeCategory({
     required this.id,
     required this.name,
-    required this.description,
     required this.iconUrl,
-    required this.recipeCount,
+    this.recipeCount = 0,
   });
 
   factory RecipeCategory.fromJson(Map<String, dynamic> json) {
     return RecipeCategory(
       id: json['id'] ?? '',
       name: json['name'] ?? '',
-      description: json['description'] ?? '',
       iconUrl: json['iconUrl'] ?? '',
       recipeCount: json['recipeCount'] ?? 0,
     );
@@ -206,7 +209,6 @@ class RecipeCategory {
     return {
       'id': id,
       'name': name,
-      'description': description,
       'iconUrl': iconUrl,
       'recipeCount': recipeCount,
     };
