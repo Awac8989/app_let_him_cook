@@ -19,7 +19,7 @@
 
 ### Tính Năng Nổi Bật
 
-🏠 **Trang Chủ Thân Thiện**
+**Trang Chủ Thân Thiện**
 - Hiển thị công thức nổi bật và mới nhất
 - Danh mục món ăn được phân loại rõ ràng
 - Giao diện đẹp mắt với hình ảnh chất lượng cao
